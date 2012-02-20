@@ -22,7 +22,17 @@ try:
 except ImportError:
     OpenSSL = None
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s - - %(asctime)s %(message)s', datefmt='[%d/%b/%Y %H:%M:%S]')
+# for logging config
+from os import path, access, R_OK
+import logging.config
+LOGGING_CONFIG = 'logging.ini'
+if path.exists(LOGGING_CONFIG) and path.isfile(LOGGING_CONFIG) and access(LOGGING_CONFIG, R_OK):
+    logging.config.fileConfig(LOGGING_CONFIG)
+    logging.info('use logging.ini for logging config')
+else:
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s - - %(asctime)s %(message)s', datefmt='[%d/%b/%Y %H:%M:%S]')
+    logging.info('file logging.ini not found or not file or can not access . use default logging config.')
+# end for logging config
 
 class Common(object):
     '''global config module'''
@@ -895,6 +905,18 @@ class LocalProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             # Connection closed before proxy return
             if err in (10053, errno.EPIPE):
                 return
+    # overwrite BaseHttpServer log method
+    #def log_request(self, code='-', size='-'):
+    #    self.log_message('"%s" %s %s', self.requestline, str(code), str(size))
+
+    def log_message(self, format, *args):
+        logging.debug("%s - - %s" %
+                        (self.address_string(),
+                        format%args))
+
+    def log_error(self, format, *args):
+        logging.error(format%args);
+
 
 class PHPProxyHandler(LocalProxyHandler):
 
